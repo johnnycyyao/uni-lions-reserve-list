@@ -14,6 +14,8 @@
 .community-rank-table th{position:sticky;top:0;z-index:1}
 @media(max-width:650px){.community-table-wrap{max-height:420px}}
 
+.community-pagination{flex-wrap:wrap;gap:14px 20px}.community-page-buttons{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}.community-page-buttons button{padding:10px 13px}.community-pagination>span{white-space:nowrap;font-variant-numeric:tabular-nums}.community-page-jump{display:flex;align-items:center;justify-content:center;gap:8px;font-size:12px;color:var(--muted)}.community-page-jump input{width:76px;min-width:0;padding:10px 8px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);font:inherit;text-align:center;font-variant-numeric:tabular-nums}.community-page-jump input:disabled{opacity:.55}.community-page-jump button{padding:10px 13px}.community-page-status{text-align:center;min-height:20px;margin:-10px 0 22px;font-size:12px;color:var(--muted)}.community-page-status[data-state=error]{color:#a33e18}@media(max-width:650px){.community-page-buttons{width:100%;gap:6px}.community-page-buttons button{padding:10px;font-size:11px}.community-pagination{gap:12px}.community-pagination>span{width:100%;text-align:center}}
+
 .exports{flex-wrap:wrap}.exports button{white-space:nowrap}</style></head><body>
 <header><a class="brand" href="#">UL<span>獅隊名簿<small>UNILIONS · ROSTER LAB</small></span></a><span class="edition">2027 契約保留模擬 <i>球迷版</i></span></header>
 <main><section class="hero"><div><p class="eyebrow">YOUR TEAM. YOUR CALL.</p><h1>下一季的獅隊，<br>由你排出名單<span>。</span></h1><p class="intro">統一7-ELEVEn獅 60 人契約保留球員名單模擬器。<br><span id="selectionIntro">勾選你決定不保留的球員，其餘球員留在名單。</span></p><div class="pills"><span>名冊・年齡・一二軍成績 2026.10.05 賽後</span><span>薪資查核 2026.10.14</span><span>含 2026 選秀新人</span><span>排除洋將・自培・陳鏞基</span></div></div><div class="hero-art" aria-hidden="true"><div class="diamond"><b>UL</b></div><span>TAINAN · SINCE 1990</span></div></section>
@@ -43,7 +45,12 @@
   <div class="community-table-wrap"><table class="community-rank-table"><caption class="community-sr">所有候選球員的保留票數與保留率，可依位置篩選及排序。</caption><thead><tr><th scope="col">名次</th><th scope="col">球員</th><th scope="col" class="community-position-col">位置</th><th scope="col">票數</th><th scope="col">保留率</th></tr></thead><tbody id="communityRanking"><tr><td colspan="5" class="community-placeholder">尚未取得公開統計。</td></tr></tbody></table></div>
   <div class="section-title"><h2>最近公開的名單</h2><span>查看朋友的完整選擇</span></div>
   <div id="communityLists" class="community-lists"><p class="community-placeholder">尚未取得公開名單。</p></div>
-  <div class="community-pagination"><button id="communityPrevious" type="button" disabled>← 上一頁</button><span id="communityPage">第 1 頁</span><button id="communityNext" type="button" disabled>下一頁 →</button></div>
+  <nav class="community-pagination" aria-label="公開名單分頁">
+    <div class="community-page-buttons"><button id="communityFirst" type="button" aria-controls="communityLists" disabled>第一頁</button><button id="communityPrevious" type="button" aria-controls="communityLists" disabled>← 上一頁</button><button id="communityNext" type="button" aria-controls="communityLists" disabled>下一頁 →</button><button id="communityLast" type="button" aria-controls="communityLists" disabled>最後一頁</button></div>
+    <span id="communityPage" aria-live="polite">尚未取得頁數</span>
+    <form id="communityJumpForm" class="community-page-jump" novalidate><label for="communityJumpPage">跳到第</label><input id="communityJumpPage" type="number" inputmode="numeric" min="1" step="1" value="1" aria-label="公開名單頁碼" aria-describedby="communityPaginationStatus" disabled><span>頁</span><button id="communityJump" type="submit" aria-controls="communityLists" disabled>前往</button></form>
+  </nav>
+  <p id="communityPaginationStatus" class="community-page-status" role="status" aria-live="polite"></p>
 </section>
 <dialog id="communityDialog" class="community-dialog" aria-labelledby="communityDialogTitle">
   <div class="community-dialog-top"><div><p class="eyebrow">PUBLIC ROSTER</p><h2 id="communityDialogTitle">公開保留名單</h2></div><button id="communityDialogClose" type="button" aria-label="關閉公開名單">✕</button></div>
@@ -121,7 +128,31 @@ function csvRows(){
  return [headers,...PLAYERS.map(p=>{const w=p.salary||{},row=[p.name,p.num,p.pos,selected.has(p.id)?'否':'是',ROSTER_ASOF,p.birthDate||'',ageAtDate(p.birthDate)??'',p.birthSourceUrl||'',w.monthly??'',w.averageMonthly??'',w.note??'',SALARY_ASOF,w.sourceUrl||''];for(const [statsKey,level] of leagues){const s=p[statsKey]||{};row.push(s.type??(p.pos==='投手'?'pitching':'batting'),s.status??'unavailable',s.competition||level+'例行賽',s.asOf||STATS_ASOF,...fields.map(([key])=>s[key]??''),s.note||(s.status==='verified'?'':recordStatusText(p,s,level)),s.sourceUrl||'',s.playerUrl||'',s.retrievedAt||'')}return row})];
 }
 $('#csv').onclick=()=>{download(new Blob(['\ufeff'+csvRows().map(r=>r.map(x=>'"'+String(x??'').replaceAll('"','""')+'"').join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'}),'統一獅完整名單.csv');notify('已下載含保留狀態、薪資與一二軍成績的完整名單。')};
-$('#png').onclick=()=>{const c=document.createElement('canvas');c.width=1200;c.height=400+POS.reduce((sum,pos)=>sum+80+Math.ceil(PLAYERS.filter(p=>p.pos===pos&&selected.has(p.id)).length/4)*56,0);const ctx=c.getContext('2d');ctx.fillStyle='#f7f7ef';ctx.fillRect(0,0,c.width,c.height);ctx.fillStyle='#194638';ctx.fillRect(0,0,1200,210);ctx.fillStyle='#f79558';ctx.font='bold 22px sans-serif';ctx.fillText('UNILIONS · ROSTER LAB',50,55);ctx.fillStyle='white';ctx.font='bold 40px sans-serif';ctx.fillText('統一7-ELEVEn獅｜契約保留模擬',50,115);ctx.font='24px sans-serif';ctx.fillText('2027 球季　｜　已保留 '+selected.size+' / 60 人',50,165);let y=260;POS.forEach(pos=>{const a=PLAYERS.filter(p=>p.pos===pos&&selected.has(p.id));ctx.fillStyle='#e96828';ctx.font='bold 27px sans-serif';ctx.fillText(pos+'　'+a.length+' 人',50,y);y+=46;ctx.fillStyle='#202520';ctx.font='24px sans-serif';a.forEach((p,i)=>ctx.fillText(p.num+' '+p.name,50+i%4*280,y+Math.floor(i/4)*56));y+=Math.ceil(a.length/4)*56+34});ctx.fillStyle='#74796f';ctx.font='20px sans-serif';ctx.fillText('名冊及一、二軍成績 '+ROSTER_ASOF+' 賽後 · 薪資查核 '+SALARY_ASOF,50,c.height-75);ctx.fillText('球迷模擬，非球團正式名單',50,c.height-40);c.toBlob(blob=>{if(blob){download(blob,'統一獅保留名單.png');notify('已下載名單圖片。')}else notify('圖片產生失敗，請改用複製名單。')},'image/png')};$('#firstTeamCoverage').textContent=coverageText('stats','一軍');$('#secondTeamCoverage').textContent=coverageText('stats2','二軍');render();
+function drawRosterImage(canvas){
+ const sections=[{title:'保留名單',kept:true,color:'#194638'},{title:'不保留名單',kept:false,color:'#a74c21'}].map(section=>({...section,groups:POS.map(pos=>({pos,players:PLAYERS.filter(p=>p.pos===pos&&selected.has(p.id)===section.kept).sort((a,b)=>Number(a.num)-Number(b.num))}))}));
+ const rows=group=>Math.max(1,Math.ceil(group.players.length/4)),sectionHeight=section=>108+section.groups.reduce((height,group)=>height+42+rows(group)*48+22,0)+10;
+ canvas.width=1200;canvas.height=260+sections.reduce((height,section)=>height+sectionHeight(section),0)+110;
+ const ctx=canvas.getContext('2d');
+ ctx.fillStyle='#f7f7ef';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#194638';ctx.fillRect(0,0,1200,210);
+ ctx.fillStyle='#f79558';ctx.font='bold 22px sans-serif';ctx.fillText('UNILIONS · ROSTER LAB',50,55);
+ ctx.fillStyle='white';ctx.font='bold 40px sans-serif';ctx.fillText('統一7-ELEVEn獅｜契約保留模擬',50,115);
+ ctx.font='24px sans-serif';ctx.fillText('2027 球季　｜　保留 '+selected.size+' / 60 人　｜　不保留 '+(PLAYERS.length-selected.size)+' 人',50,165);
+ let y=260;
+ for(const section of sections){
+  const count=section.groups.reduce((sum,group)=>sum+group.players.length,0);
+  ctx.fillStyle=section.color;ctx.fillRect(40,y,1120,66);ctx.fillStyle='white';ctx.font='bold 30px sans-serif';ctx.fillText(section.title+'　'+count+' 人',60,y+43);y+=108;
+  for(const group of section.groups){
+   ctx.fillStyle=section.color;ctx.font='bold 26px sans-serif';ctx.fillText(group.pos+'　'+group.players.length+' 人',55,y);y+=42;
+   ctx.fillStyle='#202520';ctx.font='24px sans-serif';
+   if(group.players.length)group.players.forEach((p,index)=>ctx.fillText(p.num+' '+p.name,55+index%4*280,y+Math.floor(index/4)*48,250));
+   else{ctx.fillStyle='#74796f';ctx.fillText('無',55,y)}
+   y+=rows(group)*48+22;
+  }
+  y+=10;
+ }
+ ctx.fillStyle='#74796f';ctx.font='20px sans-serif';ctx.fillText('名冊及一、二軍成績 '+ROSTER_ASOF+' 賽後 · 薪資查核 '+SALARY_ASOF,50,canvas.height-64);ctx.fillText('球迷模擬，非球團正式名單',50,canvas.height-32);
+}
+$('#png').onclick=()=>{const canvas=document.createElement('canvas');drawRosterImage(canvas);canvas.toBlob(blob=>{if(blob){download(blob,'統一獅保留與不保留名單.png');notify('已下載含保留與不保留球員的名單圖片。')}else notify('圖片產生失敗，請改用複製名單。')},'image/png')};$('#firstTeamCoverage').textContent=coverageText('stats','一軍');$('#secondTeamCoverage').textContent=coverageText('stats2','二軍');render();
 
 if(migration)notify(migration);
 
@@ -133,6 +164,9 @@ $("#openCommunity").onclick=()=>document.querySelector('[data-view="community"]'
 (() => {
   const TOKEN_KEY = 'lions-community-token-v1';
   const NICKNAME_KEY = 'lions-community-nickname-v1';
+  // The deployed community service returns 12 records per page, indexed 0–999.
+  const PAGE_SIZE = 12;
+  const MAX_PAGE = 999;
   const el = id => document.getElementById(id);
   if (!el('community')) return;
   const state = {data: null, page: 0, request: 0, loading: false, busy: false, own: null, ownKnown: false, ownRequest: 0, nicknameEdited: false, publicId: null, token: null, dialogRequest: 0};
@@ -206,6 +240,7 @@ $("#openCommunity").onclick=()=>document.querySelector('[data-view="community"]'
     if (!Number.isFinite(date.getTime())) return '更新時間未提供';
     return new Intl.DateTimeFormat('zh-TW', {timeZone: 'Asia/Taipei', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false}).format(date) + '（台灣時間）';
   }
+  function pageCount(total) { return Math.min(MAX_PAGE + 1, Math.max(1, Math.ceil(total / PAGE_SIZE))); }
   function updateControls() {
     const configured = Boolean(window.COMMUNITY_API);
     el('communitySubmit').disabled = state.busy || selected.size === 0 || selected.size > 60 || !configured;
@@ -214,8 +249,12 @@ $("#openCommunity").onclick=()=>document.querySelector('[data-view="community"]'
     el('communityWithdraw').disabled = state.busy || !configured;
     el('communityNickname').disabled = state.busy;
     el('communityRefresh').disabled = state.loading;
-    el('communityPrevious').disabled = state.loading || state.page === 0 || !state.data;
-    el('communityNext').disabled = state.loading || !state.data?.hasMore;
+    const unavailable = state.loading || !state.data || state.data.total === 0;
+    const last = state.data ? pageCount(state.data.total) - 1 : 0;
+    el('communityFirst').disabled = el('communityPrevious').disabled = unavailable || state.page === 0;
+    el('communityLast').disabled = el('communityNext').disabled = unavailable || state.page >= last;
+    el('communityJump').disabled = el('communityJumpPage').disabled = unavailable || last === 0;
+    el('communityJumpPage').max = String(last + 1);
   }
   function renderSelection() {
     el('communitySelectionCount').textContent = '保留 ' + selected.size + ' / 60 人 · 不保留 ' + (PLAYERS.length-selected.size) + ' 人';
@@ -346,18 +385,30 @@ $("#openCommunity").onclick=()=>document.querySelector('[data-view="community"]'
       card.append(top, time, positions, button);
       container.append(card);
     });
-    el('communityPage').textContent = '第 ' + (state.page + 1) + ' 頁';
+    el('communityPage').textContent = '第 ' + (state.page + 1) + ' / ' + pageCount(state.data.total) + ' 頁 · 共 ' + state.data.total + ' 份';
+    el('communityJumpPage').value = String(state.page + 1);
     updateControls();
   }
   async function refreshCommunity(page = state.page) {
     const request = ++state.request;
+    page = Math.max(0, Math.min(MAX_PAGE, Number.isSafeInteger(page) ? page : 0));
     state.loading = true;
     updateControls();
+    message('communityPaginationStatus', '');
     message('communityLoadStatus', state.data ? '正在更新公開統計…' : '正在取得公開名單與統計…');
     try {
-      const result = await jsonp({action: 'community', page});
-      if (request !== state.request) return;
-      if (!Number.isInteger(result.total) || result.total < 0 || !result.counts || typeof result.counts !== 'object' || Array.isArray(result.counts) || !Array.isArray(result.lists)) throw new Error('公開統計資料格式不正確，請稍後再試。');
+      let result;
+      let adjusted = false;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        result = await jsonp({action: 'community', page});
+        if (request !== state.request) return;
+        if (!Number.isSafeInteger(result.total) || result.total < 0 || !result.counts || typeof result.counts !== 'object' || Array.isArray(result.counts) || !Array.isArray(result.lists)) throw new Error('公開統計資料格式不正確，請稍後再試。');
+        const last = pageCount(result.total) - 1;
+        if (page <= last) break;
+        if (attempt === 2) throw new Error('公開名單頁數正在變動，請再試一次。');
+        page = last;
+        adjusted = true;
+      }
       const total = Math.max(0, Math.floor(number(result.total)));
       const counts = {};
       PLAYERS.forEach(player => { counts[player.id] = Math.min(total, Math.max(0, Math.floor(number(result.counts?.[player.id])))); });
@@ -366,6 +417,7 @@ $("#openCommunity").onclick=()=>document.querySelector('[data-view="community"]'
       renderSummary();
       renderRanking();
       renderLists();
+      if (adjusted) message('communityPaginationStatus', '公開名單頁數已變更，已前往最後一頁。');
       message('communityLoadStatus', '已更新 · ' + prettyTime(new Date().toISOString()) + (total === 0 ? ' · 尚無公開名單，保留率暫不計算。' : ''), 'success');
     } catch (error) {
       if (request !== state.request) return;
@@ -373,6 +425,14 @@ $("#openCommunity").onclick=()=>document.querySelector('[data-view="community"]'
     } finally {
       if (request === state.request) { state.loading = false; updateControls(); }
     }
+  }
+  function navigatePage(page) {
+    if (state.loading || !state.data || state.data.total === 0) return;
+    if (page === state.page) {
+      message('communityPaginationStatus', '目前已在第 ' + (page + 1) + ' 頁。');
+      return;
+    }
+    refreshCommunity(page);
   }
   function rosterColumn(title, items, unselected) {
     const column = node('section', undefined, 'community-dialog-column' + (unselected ? ' community-unselected' : ''));
@@ -490,8 +550,24 @@ $("#openCommunity").onclick=()=>document.querySelector('[data-view="community"]'
     refreshCommunity(0);
     if (!state.busy) loadOwn().catch(error => message('communityActionStatus', '無法確認此瀏覽器的公開名單：' + error.message, 'error'));
   });
-  el('communityPrevious').addEventListener('click', () => refreshCommunity(Math.max(0, state.page - 1)));
-  el('communityNext').addEventListener('click', () => refreshCommunity(state.page + 1));
+  el('communityFirst').addEventListener('click', () => navigatePage(0));
+  el('communityPrevious').addEventListener('click', () => navigatePage(Math.max(0, state.page - 1)));
+  el('communityNext').addEventListener('click', () => navigatePage(Math.min(pageCount(state.data?.total || 0) - 1, state.page + 1)));
+  el('communityLast').addEventListener('click', () => navigatePage(pageCount(state.data?.total || 0) - 1));
+  el('communityJumpForm').addEventListener('submit', event => {
+    event.preventDefault();
+    if (state.loading || !state.data || state.data.total === 0) return;
+    const input = el('communityJumpPage');
+    const value = input.value.trim();
+    const page = Number(value);
+    const pages = pageCount(state.data.total);
+    if (!/^\d+$/.test(value) || !Number.isSafeInteger(page) || page < 1 || page > pages) {
+      message('communityPaginationStatus', '請輸入 1–' + pages + ' 之間的整數頁碼。', 'error');
+      input.focus();
+      return;
+    }
+    navigatePage(page - 1);
+  });
   el('communityEditRoster').addEventListener('click', () => document.querySelector('[data-view="pick"]')?.click());
   el('communityDialogClose').addEventListener('click', () => el('communityDialog').close());
   el('communityDialog').addEventListener('close', () => { ++state.dialogRequest; });
